@@ -1,62 +1,84 @@
-# Importación de librerías
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from sklearn import datasets
 
-# 1. Generar un dataset sintético
-np.random.seed(42)
-n_samples = 100
 
-# Simulamos altura en cm (entre 150 y 200) y edad en años (entre 18 y 60)
-altura = np.random.uniform(150, 200, n_samples)
-edad = np.random.uniform(18, 60, n_samples)
+path = "regresion-lineal/body_measurements_dataset.csv"  
+datos = pd.read_csv(path)
 
-# Simulamos el peso en kg con una relación lineal + ruido
-peso = 0.5 * altura + 0.8 * edad + np.random.normal(0, 5, n_samples)
 
-# Crear DataFrame
-data = pd.DataFrame({
-    'Altura': altura,
-    'Edad': edad,
-    'Peso': peso
-})
+print(datos.tail())
+print(datos.describe())
+print("Valores nulos por columna:\n", datos.isna().sum())
+print("Distribución por género:\n", datos["Gender"].value_counts())
 
-print("Primeras filas del dataset:")
-print(data.head())
 
-# 2. Separar variables independientes y dependiente
-X = data[['Altura', 'Edad']]  # Variables independientes
-y = data['Peso']              # Variable dependiente
+subDataframe = datos[['Height_cm', 'Age', 'Weight_kg']]
+matrix = subDataframe.corr()
+print("Matriz de correlación:\n", matrix)
 
-# 3. Dividir en datos de entrenamiento y prueba
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 4. Crear y entrenar el modelo de regresión lineal
-modelo = LinearRegression()
-modelo.fit(X_train, y_train)
-
-# 5. Predecir en el conjunto de prueba
-y_pred = modelo.predict(X_test)
-
-# 6. Evaluar el modelo
-print("\nEvaluación del modelo:")
-print(f"Coeficientes: {modelo.coef_}")
-print(f"Intercepto: {modelo.intercept_}")
-print(f"MSE (error cuadrático medio): {mean_squared_error(y_test, y_pred):.2f}")
-print(f"MAE (error absoluto medio): {mean_absolute_error(y_test, y_pred):.2f}")
-print(f"R2 Score: {r2_score(y_test, y_pred):.2f}")
-
-# 7. Visualizar resultados
-plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred, color='blue', edgecolor='k', alpha=0.7)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='red', linewidth=2)
-plt.xlabel("Peso Real")
-plt.ylabel("Peso Predicho")
-plt.title("Regresión lineal")
+subDataframe.plot(kind='scatter', x='Height_cm', y='Weight_kg', figsize=(8, 5), color='teal')
+plt.title("Relación entre altura y peso")
 plt.grid(True)
 plt.show()
+
+
+reg = LinearRegression()
+reg.fit(datos[["Height_cm"]], datos["Weight_kg"])
+
+
+print("B1 (pendiente):", reg.coef_)
+print("B0 (intercepto):", reg.intercept_)
+
+
+print("Predicción para altura = 170 cm:", reg.predict([[170]])[0])
+
+
+predicted = reg.predict(datos[["Height_cm"]])
+
+
+mse = mean_squared_error(datos["Weight_kg"], predicted)
+print("Error cuadrático medio (MSE):", mse)
+print("Coeficiente de correlación altura-peso:", np.corrcoef(datos["Height_cm"], predicted)[0, 1])
+
+
+plt.figure(figsize=(10, 6))
+plt.scatter(datos["Height_cm"], datos["Weight_kg"], color='blue', label='Datos reales')
+plt.plot(datos["Height_cm"], predicted, color='red', label='Regresión lineal')
+plt.xlabel('Altura (cm)')
+plt.ylabel('Peso (kg)')
+plt.title('Regresión Lineal: Peso en función de Altura')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+X_train, X_test, y_train, y_test = train_test_split(datos[["Height_cm"]], datos["Weight_kg"], test_size=0.2, random_state=42)
+
+
+reg.fit(X_train, y_train)
+
+
+y_pred = reg.predict(X_test)
+
+
+plt.scatter(X_test, y_test, color='blue')
+plt.plot(X_test, y_pred, color='green')
+plt.title('Regresión Lineal (Test Set)')
+plt.xlabel('Altura (cm)')
+plt.ylabel('Peso (kg)')
+plt.grid(True)
+plt.show()
+
+
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print("Error cuadrático medio:", mse)
+print("Error medio absoluto:", mae)
+print("Coeficiente de determinación R²:", r2)
